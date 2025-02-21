@@ -4,6 +4,7 @@ from elftools.dwarf.die import DIE
 from elftools.elf.elffile import ELFFile
 from functools import wraps
 
+RED_NONE_STR = "\033[91mNone\033[0m"
 
 def require_attr(attr, require_die=False):
     def decorator(func):
@@ -50,12 +51,18 @@ def desc_file(attr_name, die):
     # Filename/dirname arrays are 0-based in DWARF v5
     offset = 0 if lineprogram.header.version >= 5 else 1
 
+    file_name = RED_NONE_STR
     file_index = offset + int(attr_name.value)
-    file_entry = lineprogram.header.file_entry[file_index]
-    file_name = file_entry.name.decode('utf-8', errors='ignore')
+    if 0 <= file_index < len(lineprogram.header.file_entry):
+        file_entry = lineprogram.header.file_entry[file_index]
+        file_name = file_entry.name.decode('utf-8', errors='ignore')
+    else:
+        return RED_NONE_STR
 
+    dir_name = RED_NONE_STR
     dir_index = offset + int(file_entry.dir_index)
-    dir_name = lineprogram.header.include_directory[dir_index].decode('utf-8', errors='ignore')
+    if 0 <= dir_index < len(lineprogram.header.include_directory):
+        dir_name = lineprogram.header.include_directory[dir_index].decode('utf-8', errors='ignore')
 
     return dir_name + "/" + file_name
 
