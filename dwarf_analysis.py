@@ -1,4 +1,4 @@
-import sys
+import argparse
 from elftools.dwarf.compileunit import CompileUnit
 from elftools.dwarf.die import DIE
 from elftools.elf.elffile import ELFFile
@@ -133,9 +133,11 @@ def desc_cu(cu: CompileUnit):
 
 
 if __name__ == '__main__':
-    elf_path = sys.argv[1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file", type=str, required=True)
+    args = parser.parse_args()
 
-    with open(elf_path, 'rb') as f:
+    with open(args.file, 'rb') as f:
         elf = ELFFile(f)
 
         if not elf.has_dwarf_info():
