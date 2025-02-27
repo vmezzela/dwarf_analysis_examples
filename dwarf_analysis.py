@@ -3,6 +3,7 @@ from elftools.dwarf.compileunit import CompileUnit
 from elftools.dwarf.die import DIE
 from elftools.elf.elffile import ELFFile
 from functools import wraps
+from pathlib import PurePath
 
 
 def require_attr(attr, require_die=False):
@@ -15,6 +16,24 @@ def require_attr(attr, require_die=False):
             return None
         return wrapper
     return decorator
+
+
+def clean_relative_path(path: PurePath):
+    """
+    Drop all the leading ".." from the path
+
+    Args:
+        path: The path to clean.
+
+    Returns:
+        PurePath: The cleaned path.
+    """
+    parts = path.parts
+    if parts and parts[0] != "..":
+        return path
+
+    new_path = PurePath(*parts[1:])
+    return clean_relative_path(new_path)
 
 
 @require_attr("DW_AT_name")
@@ -53,13 +72,14 @@ def desc_file(attr_name, die):
     file_index = offset + int(attr_name.value)
     assert 0 <= file_index < len(lineprogram.header.file_entry)
     file_entry = lineprogram.header.file_entry[file_index]
-    file_name = file_entry.name.decode('utf-8', errors='ignore')
+    file_name = PurePath(file_entry.name.decode('utf-8', errors='ignore'))
 
     dir_index = offset + int(file_entry.dir_index)
     assert 0 <= dir_index < len(lineprogram.header.include_directory)
-    dir_name = lineprogram.header.include_directory[dir_index].decode('utf-8', errors='ignore')
+    enc_dir_path = lineprogram.header.include_directory[dir_index]
+    dir_path = PurePath(enc_dir_path.decode('utf-8', errors='ignore'))
 
-    return dir_name + "/" + file_name
+    return dir_path/file_name
 
 
 @require_attr("DW_AT_decl_line")
@@ -96,7 +116,7 @@ def die_is_func(die: DIE):
     return die.tag == 'DW_TAG_subprogram'
 
 
-def get_function_information(die: DIE):
+def get_function_information(die: DIE, base_path=""):
     """
     Extract and print function details including its name, file, and line number.
 
@@ -109,11 +129,14 @@ def get_function_information(die: DIE):
     file = FUNC_ATTR_DESCRIPTIONS["DW_AT_decl_file"](die)
     line = FUNC_ATTR_DESCRIPTIONS["DW_AT_decl_line"](die)
 
+    if file and base_path:
+        file = PurePath(base_path)/clean_relative_path(file)
+
     if any([name, file, line]):
         print(f"\t{name} @ {file} : {line}")
 
 
-def desc_cu(cu: CompileUnit):
+def desc_cu(cu: CompileUnit, base_path=""):
     """
     Extract and print information about a Compilation Unit (CU) and its functions.
 
@@ -129,12 +152,13 @@ def desc_cu(cu: CompileUnit):
 
     for die in cu.iter_DIEs():
         if die_is_func(die):
-            get_function_information(die)
+            get_function_information(die, base_path)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", type=str, required=True)
+    parser.add_argument("--base_path", type=str, required=False)
     args = parser.parse_args()
 
     with open(args.file, 'rb') as f:
@@ -147,4 +171,4 @@ if __name__ == '__main__':
         dwarf_info = elf.get_dwarf_info()
 
         for cu in dwarf_info.iter_CUs():
-            desc_cu(cu)
+            desc_cu(cu, args.base_path)
