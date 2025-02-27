@@ -95,11 +95,25 @@ def desc_line(attr_name):
     """
     return str(attr_name.value)
 
+@require_attr("DW_AT_low_pc")
+def desc_addr(attr_name):
+    """
+    Retrieve and return the address of the function.
+
+    Args:
+        attr_name: The attribute containing the address.
+
+    Returns:
+        str: The address.
+    """
+    return str(hex(attr_name.value))
+
 
 FUNC_ATTR_DESCRIPTIONS = dict(
     DW_AT_name=desc_name,
     DW_AT_decl_file=desc_file,
-    DW_AT_decl_line=desc_line
+    DW_AT_decl_line=desc_line,
+    DW_AT_low_pc=desc_addr
 )
 
 
@@ -128,12 +142,13 @@ def get_function_information(die: DIE, base_path=""):
     name = FUNC_ATTR_DESCRIPTIONS["DW_AT_name"](die)
     file = FUNC_ATTR_DESCRIPTIONS["DW_AT_decl_file"](die)
     line = FUNC_ATTR_DESCRIPTIONS["DW_AT_decl_line"](die)
+    addr = FUNC_ATTR_DESCRIPTIONS["DW_AT_low_pc"](die)
 
     if file and base_path:
         file = PurePath(base_path)/clean_relative_path(file)
 
     if any([name, file, line]):
-        print(f"{name} {file} {line}")
+        print(f"{name} {file} {line} {addr}")
 
 
 def desc_cu(cu: CompileUnit, base_path=""):
