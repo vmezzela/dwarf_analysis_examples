@@ -133,7 +133,7 @@ def get_function_information(die: DIE, base_path=""):
         file = PurePath(base_path)/clean_relative_path(file)
 
     if any([name, file, line]):
-        print(f"\t{name} @ {file} : {line}")
+        print(f"{name} {file} {line}")
 
 
 def desc_cu(cu: CompileUnit, base_path=""):
