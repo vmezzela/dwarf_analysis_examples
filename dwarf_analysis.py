@@ -147,7 +147,7 @@ def get_function_information(die: DIE, base_path=""):
     if file and base_path:
         file = PurePath(base_path)/clean_relative_path(file)
 
-    if any([name, file, line]):
+    if all([name, file, line]):
         print(f"{name} {file} {line} {addr}")
 
 
