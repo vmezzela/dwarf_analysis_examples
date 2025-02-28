@@ -2,6 +2,7 @@ import argparse
 from elftools.dwarf.compileunit import CompileUnit
 from elftools.dwarf.die import DIE
 from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
 from functools import wraps
 from pathlib import PurePath
 
@@ -129,6 +130,46 @@ def die_is_func(die: DIE):
     return die.tag == 'DW_TAG_subprogram'
 
 
+def get_function_symtab_index(function, address):
+    """
+    Retrieve the symbol index of a given function identified by its name and
+    its address. The address is needed because more function with the same name
+    might be present in the symbol table.
+
+    Args:
+        function: The name of the function.
+        address: The address of the function.
+
+    Returns:
+        int: The index of the function in the symbol table.
+    """
+    symtab = elf.get_section_by_name(".symtab")
+    assert isinstance(symtab, SymbolTableSection)
+
+    found = None
+    for i in range(symtab.num_symbols()):
+        sym = symtab.get_symbol(i)
+        sym_type = sym['st_info']['type']
+
+        # Skip entries that are not functions
+        if sym_type != 'STT_FUNC':
+            continue
+
+        sym_addr = sym['st_value']
+        if sym.name == function and sym_addr == address:
+            # Make sure there are no other entries with same (name, address).
+            # This slows down a lot the search, because we could otherwise just
+            # do:
+            #    return i
+            #
+            # NOTE: keep this until I make sure what's the minimal subset of
+            # attributes that makes an entry unique
+            assert not found
+            found = i
+
+    return found
+
+
 def get_function_information(die: DIE, base_path=""):
     """
     Extract and print function details including its name, file, and line number.
@@ -146,8 +187,9 @@ def get_function_information(die: DIE, base_path=""):
     if file and base_path:
         file = PurePath(base_path)/clean_relative_path(file)
 
-    if all([name, file, line]):
-        print(f"{name} {file} {line} {addr}")
+    if all([name, file, line, addr]):
+        idx = get_function_symtab_index(name, addr)
+        print(f"{name} {file} {line} {hex(addr)} {idx}")
 
 
 def desc_cu(cu: CompileUnit, base_path=""):
