@@ -192,7 +192,7 @@ def get_function_information(die: DIE, base_path=""):
         print(f"{name} {file} {line} {hex(addr)} {idx}")
 
 
-def desc_cu(cu: CompileUnit, base_path=""):
+def desc_cu(cu: CompileUnit, base_path="", filter_cu_name=""):
     """
     Extract and print information about a Compilation Unit (CU) and its functions.
 
@@ -203,7 +203,11 @@ def desc_cu(cu: CompileUnit, base_path=""):
     name_attr = cu_die.attributes.get('DW_AT_name')
     assert name_attr
 
-    name = name_attr.value.decode('utf-8', errors='ignore')
+    name = PurePath(name_attr.value.decode('utf-8', errors='ignore'))
+    name = clean_relative_path(name)
+    if filter_cu_name and name != PurePath(filter_cu_name):
+        return
+
     print(f"\n[Compilation Unit] Offset: {cu.cu_offset}, Name: {name}")
 
     for die in cu.iter_DIEs():
@@ -217,6 +221,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", type=str, required=True)
     parser.add_argument("--base_path", type=str, required=False)
+    parser.add_argument("--cu", type=str, required=False)
     args = parser.parse_args()
 
     with open(args.file, 'rb') as f:
@@ -229,7 +234,7 @@ def main():
         dwarf_info = elf.get_dwarf_info()
 
         for cu in dwarf_info.iter_CUs():
-            desc_cu(cu, args.base_path)
+            desc_cu(cu, base_path=args.base_path, filter_cu_name=args.cu)
 
 
 if __name__ == '__main__':
