@@ -90,9 +90,9 @@ def desc_line(attr_name):
         attr_name: The attribute containing the line number.
 
     Returns:
-        str: The line number as a string.
+        int: The line number.
     """
-    return str(attr_name.value)
+    return attr_name.value
 
 @require_attr("DW_AT_low_pc")
 def desc_addr(attr_name):
@@ -103,9 +103,9 @@ def desc_addr(attr_name):
         attr_name: The attribute containing the address.
 
     Returns:
-        str: The address.
+        int: The address.
     """
-    return str(hex(attr_name.value))
+    return attr_name.value
 
 
 FUNC_ATTR_DESCRIPTIONS = dict(
