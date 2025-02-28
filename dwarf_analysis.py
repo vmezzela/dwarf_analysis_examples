@@ -187,10 +187,10 @@ def get_function_information(die: DIE, base_path="", filter_function_name=""):
     line = FUNC_ATTR_DESCRIPTIONS["DW_AT_decl_line"](die)
     addr = FUNC_ATTR_DESCRIPTIONS["DW_AT_low_pc"](die)
 
-    if file and base_path:
-        file = PurePath(base_path)/clean_relative_path(file)
-
     if all([name, file, line, addr]):
+        file = clean_relative_path(file)
+        if base_path:
+            file = PurePath(base_path)/file
         idx = get_function_symtab_index(name, addr)
         print(f"{name} {file} {line} {hex(addr)} {idx}")
 
