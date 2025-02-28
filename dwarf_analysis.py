@@ -5,7 +5,6 @@ from elftools.elf.elffile import ELFFile
 from functools import wraps
 from pathlib import PurePath
 
-
 def require_attr(attr, require_die=False):
     def decorator(func):
         @wraps(func)
@@ -170,7 +169,9 @@ def desc_cu(cu: CompileUnit, base_path=""):
             get_function_information(die, base_path)
 
 
-if __name__ == '__main__':
+
+def main():
+    global elf
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", type=str, required=True)
     parser.add_argument("--base_path", type=str, required=False)
@@ -187,3 +188,7 @@ if __name__ == '__main__':
 
         for cu in dwarf_info.iter_CUs():
             desc_cu(cu, args.base_path)
+
+
+if __name__ == '__main__':
+    main()
