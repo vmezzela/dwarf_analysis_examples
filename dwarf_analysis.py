@@ -170,7 +170,7 @@ def get_function_symtab_index(function, address):
     return found
 
 
-def get_function_information(die: DIE, base_path=""):
+def get_function_information(die: DIE, base_path="", filter_function_name=""):
     """
     Extract and print function details including its name, file, and line number.
 
@@ -180,6 +180,9 @@ def get_function_information(die: DIE, base_path=""):
     assert die_is_func(die)
 
     name = FUNC_ATTR_DESCRIPTIONS["DW_AT_name"](die)
+    if filter_function_name and name != filter_function_name:
+        return
+
     file = FUNC_ATTR_DESCRIPTIONS["DW_AT_decl_file"](die)
     line = FUNC_ATTR_DESCRIPTIONS["DW_AT_decl_line"](die)
     addr = FUNC_ATTR_DESCRIPTIONS["DW_AT_low_pc"](die)
@@ -192,7 +195,7 @@ def get_function_information(die: DIE, base_path=""):
         print(f"{name} {file} {line} {hex(addr)} {idx}")
 
 
-def desc_cu(cu: CompileUnit, base_path="", filter_cu_name=""):
+def desc_cu(cu: CompileUnit, base_path="", filter_cu_name="", filter_function_name=""):
     """
     Extract and print information about a Compilation Unit (CU) and its functions.
 
@@ -212,7 +215,7 @@ def desc_cu(cu: CompileUnit, base_path="", filter_cu_name=""):
 
     for die in cu.iter_DIEs():
         if die_is_func(die):
-            get_function_information(die, base_path)
+            get_function_information(die, base_path, filter_function_name)
 
 
 
@@ -222,6 +225,7 @@ def main():
     parser.add_argument("--file", type=str, required=True)
     parser.add_argument("--base_path", type=str, required=False)
     parser.add_argument("--cu", type=str, required=False)
+    parser.add_argument("--function", type=str, required=False)
     args = parser.parse_args()
 
     with open(args.file, 'rb') as f:
@@ -234,7 +238,7 @@ def main():
         dwarf_info = elf.get_dwarf_info()
 
         for cu in dwarf_info.iter_CUs():
-            desc_cu(cu, base_path=args.base_path, filter_cu_name=args.cu)
+            desc_cu(cu, base_path=args.base_path, filter_cu_name=args.cu, filter_function_name=args.function)
 
 
 if __name__ == '__main__':
