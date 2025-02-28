@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import argparse
 from elftools.dwarf.compileunit import CompileUnit
 from elftools.dwarf.die import DIE
