@@ -226,22 +226,31 @@ def main():
     global elf
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug_info", type=str, required=True)
+    parser.add_argument("--elf", type=str, required=False)
     parser.add_argument("--base_path", type=str, required=False)
     parser.add_argument("--cu", type=str, required=False)
     parser.add_argument("--function", type=str, required=False)
     args = parser.parse_args()
 
     with open(args.debug_info, 'rb') as f:
-        elf = ELFFile(f)
+        debug_info_file = ELFFile(f)
 
-        if not elf.has_dwarf_info():
+        if args.elf:
+            elf_file = open(args.elf, 'rb')
+            elf = ELFFile(elf_file)
+        else:
+            elf = debug_info_file
+
+        if not debug_info_file.has_dwarf_info():
             print("No DWARF info found.")
             exit(0)
 
-        dwarf_info = elf.get_dwarf_info()
+        dwarf_info = debug_info_file.get_dwarf_info()
 
         for cu in dwarf_info.iter_CUs():
             desc_cu(cu, base_path=args.base_path, filter_cu_name=args.cu, filter_function_name=args.function)
+
+        elf.close()
 
 
 if __name__ == '__main__':
