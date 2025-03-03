@@ -72,6 +72,7 @@ def desc_file(attr_name, die):
     offset = 0 if lineprogram.header.version >= 5 else -1
 
     file_index = offset + int(attr_name.value)
+    # TODO: value 0 means that no source has been specified
     assert 0 <= file_index < len(lineprogram.header.file_entry)
     file_entry = lineprogram.header.file_entry[file_index]
     file_name = PurePath(file_entry.name.decode('utf-8', errors='ignore'))
@@ -224,13 +225,13 @@ def desc_cu(cu: CompileUnit, base_path="", filter_cu_name="", filter_function_na
 def main():
     global elf
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file", type=str, required=True)
+    parser.add_argument("--debug_info", type=str, required=True)
     parser.add_argument("--base_path", type=str, required=False)
     parser.add_argument("--cu", type=str, required=False)
     parser.add_argument("--function", type=str, required=False)
     args = parser.parse_args()
 
-    with open(args.file, 'rb') as f:
+    with open(args.debug_info, 'rb') as f:
         elf = ELFFile(f)
 
         if not elf.has_dwarf_info():

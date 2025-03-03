@@ -3,7 +3,7 @@
 elf_file=$1
 base_path=$2
 
-python3 dwarf_analysis.py --file $elf_file --base_path $base_path |
+python3 dwarf_analysis.py --debug_info $elf_file --base_path $base_path |
 grep -v '^$' |
 grep -v "\[Compilation Unit\]" |
 while read func file line addr symtab_idx; do
