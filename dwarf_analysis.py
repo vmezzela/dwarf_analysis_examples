@@ -133,7 +133,7 @@ def die_is_func(die: DIE):
     return die.tag == 'DW_TAG_subprogram'
 
 
-def get_function_symtab_index(function, address):
+def get_function_symtab_index(function, address, relative=False):
     """
     Retrieve the symbol index of a given function identified by its name and
     its address. The address is needed because more function with the same name
@@ -149,7 +149,7 @@ def get_function_symtab_index(function, address):
     symtab = elf.get_section_by_name(".symtab")
     assert isinstance(symtab, SymbolTableSection)
 
-    found = None
+    matches = 0
     for i in range(symtab.num_symbols()):
         sym = symtab.get_symbol(i)
         sym_type = sym['st_info']['type']
@@ -159,21 +159,15 @@ def get_function_symtab_index(function, address):
             continue
 
         sym_addr = sym['st_value']
-        if sym.name == function and sym_addr == address:
-            # Make sure there are no other entries with same (name, address).
-            # This slows down a lot the search, because we could otherwise just
-            # do:
-            #    return i
-            #
-            # NOTE: keep this until I make sure what's the minimal subset of
-            # attributes that makes an entry unique
-            assert not found
-            found = i
+        if sym.name == function:
+            matches += 1
+            if sym_addr == address:
+                return matches if relative else i
 
-    return found
+    return matches
 
 
-def get_function_information(die: DIE, base_path="", filter_function_name=""):
+def get_function_information(die: DIE, base_path="", filter_function_name="", relative=False):
     """
     Extract and print function details including its name, file, and line number.
 
@@ -194,11 +188,11 @@ def get_function_information(die: DIE, base_path="", filter_function_name=""):
         file = clean_relative_path(file)
         if base_path:
             file = PurePath(base_path)/file
-        idx = get_function_symtab_index(name, addr)
+        idx = get_function_symtab_index(name, addr, relative=relative)
         print(f"{name} {file} {line} {hex(addr)} {idx}")
 
 
-def desc_cu(cu: CompileUnit, base_path="", filter_cu_name="", filter_function_name=""):
+def desc_cu(cu: CompileUnit, base_path="", filter_cu_name="", filter_function_name="", relative=False):
     """
     Extract and print information about a Compilation Unit (CU) and its functions.
 
@@ -218,7 +212,8 @@ def desc_cu(cu: CompileUnit, base_path="", filter_cu_name="", filter_function_na
 
     for die in cu.iter_DIEs():
         if die_is_func(die):
-            get_function_information(die, base_path, filter_function_name)
+            get_function_information(die, base_path, filter_function_name,
+                                     relative=relative)
 
 
 
@@ -230,6 +225,8 @@ def main():
     parser.add_argument("--base_path", type=str, required=False)
     parser.add_argument("--cu", type=str, required=False)
     parser.add_argument("--function", type=str, required=False)
+    parser.add_argument("--relative_idx", action="store_true", required=False)
+
     args = parser.parse_args()
 
     with open(args.debug_info, 'rb') as f:
@@ -248,7 +245,9 @@ def main():
         dwarf_info = debug_info_file.get_dwarf_info()
 
         for cu in dwarf_info.iter_CUs():
-            desc_cu(cu, base_path=args.base_path, filter_cu_name=args.cu, filter_function_name=args.function)
+            desc_cu(cu, base_path=args.base_path, filter_cu_name=args.cu,
+                    filter_function_name=args.function,
+                    relative=args.relative_idx)
 
         elf.close()
 
