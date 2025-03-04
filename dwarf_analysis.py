@@ -150,8 +150,7 @@ def get_function_symtab_index(function, address, relative=False):
     assert isinstance(symtab, SymbolTableSection)
 
     matches = 0
-    for i in range(symtab.num_symbols()):
-        sym = symtab.get_symbol(i)
+    for i, sym in enumerate(symtab.iter_symbols()):
         sym_type = sym['st_info']['type']
 
         # Skip entries that are not functions
