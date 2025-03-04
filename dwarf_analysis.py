@@ -220,12 +220,12 @@ def desc_cu(cu: CompileUnit, base_path="", filter_cu_name="", filter_function_na
 def main():
     global elf
     parser = argparse.ArgumentParser()
-    parser.add_argument("--debug_info", type=str, required=True)
-    parser.add_argument("--elf", type=str, required=False)
-    parser.add_argument("--base_path", type=str, required=False)
-    parser.add_argument("--cu", type=str, required=False)
-    parser.add_argument("--function", type=str, required=False)
-    parser.add_argument("--relative_idx", action="store_true", required=False)
+    parser.add_argument("--debug_info", type=str, required=True, help="Path to the debug info file.")
+    parser.add_argument("--elf", type=str, required=False, help="Path to the ELF binary file.")
+    parser.add_argument("--base_path", type=str, required=False, help="Base directory for relative paths.")
+    parser.add_argument("--cu", type=str, required=False, help="Compilation unit to filter the debug information.")
+    parser.add_argument("--function", type=str, required=False, help="Function name to analyze.")
+    parser.add_argument("--relative_idx", action="store_true", required=False, help="Use relative indexing.")
 
     args = parser.parse_args()
 
