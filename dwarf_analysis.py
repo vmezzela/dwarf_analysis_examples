@@ -242,7 +242,7 @@ def main():
             print("No DWARF info found.")
             exit(0)
 
-        dwarf_info = debug_info_file.get_dwarf_info()
+        dwarf_info = debug_info_file.get_dwarf_info(relocate_dwarf_sections=False)
 
         for cu in dwarf_info.iter_CUs():
             desc_cu(cu, base_path=args.base_path, filter_cu_name=args.cu,
