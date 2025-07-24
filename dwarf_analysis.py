@@ -200,7 +200,8 @@ def desc_cu(cu: CompileUnit, base_path="", filter_cu_name="", filter_function_na
     """
     cu_die = cu.get_top_DIE()
     name_attr = cu_die.attributes.get('DW_AT_name')
-    assert name_attr
+    if not name_attr:
+        return
 
     name = PurePath(name_attr.value.decode('utf-8', errors='ignore'))
     name = clean_relative_path(name)
